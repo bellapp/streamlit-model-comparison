@@ -1,0 +1,30 @@
+# API Keys for Embedding Models
+GOOGLE_API_KEY=your_google_api_key_here
+GEMINI_API_KEY=your_gemini_api_key_here  # Alternative to GOOGLE_API_KEY
+VOYAGE_API_KEY=your_voyage_api_key_here
+VOYAGEAI_API_KEY=your_voyageai_api_key_here  # Alternative to VOYAGE_API_KEY
+OPENAI_API_KEY=your_openai_api_key_here
+
+# TurboPuffer Configuration
+TURBOPUFFER_API_KEY=your_turbopuffer_api_key_here
+TURBOPUFFER_REGION=aws-us-east-1  # or gcp-us-central1# Model Namespaces (Optional - can be overridden in the app UI)
+# Set these to avoid typing namespace names each time
+# NOTE: Match the model used to create each namespace!
+#   - Gemini: gemini-embedding-001 (1536d)
+#   - Voyage: voyage-4 (1024d)
+#   - OpenAI: text-embedding-3-small (1536d)
+
+# TITLES Namespaces
+GEMINI_TITLES_NAMESPACE=compare-titles-gemini-profile_v12-20250126
+VOYAGE_TITLES_NAMESPACE=compare-titles-voyage-profile_v12-20250126
+OPENAI_TITLES_NAMESPACE=compare-titles-openai-small-profile_v12-20250126
+
+# SKILLS Namespaces
+GEMINI_SKILLS_NAMESPACE=compare-skills-gemini-profile_v12-20250126
+VOYAGE_SKILLS_NAMESPACE=compare-skills-voyage-profile_v12-20250126
+OPENAI_SKILLS_NAMESPACE=compare-skills-openai-small-profile_v12-20250126
+
+# Legacy namespace names (for backward compatibility)
+GEMINI_NAMESPACE=compare-titles-gemini-profile_v4-20250122
+VOYAGE_NAMESPACE=compare-titles-voyage-profile_v4-20250122
+OPENAI_NAMESPACE=compare-titles-openai-small-profile_v4-20250122

@@ -1,0 +1,44 @@
+# Environment variables (contains secrets)
+.env
+*.env
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Streamlit
+.streamlit/secrets.toml
+
+# Service account files (DO NOT COMMIT)
+*.json
+!requirements.json
+!package.json
+!tsconfig.json
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+temp/
+tmp/
