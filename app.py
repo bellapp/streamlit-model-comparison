@@ -171,6 +171,13 @@ st.markdown("""
     .stButton>button:hover {
         transform: scale(1.02);
     }
+    .timing-text {
+        text-align: right;
+        font-size: 0.85rem;
+        color: #666;
+        font-weight: 500;
+        margin-top: 15px;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -446,7 +453,7 @@ def display_model_results(model_name: str, results: List[Dict], search_time: flo
     with col1:
         st.markdown(f"### {icon} {model_name.upper()}")
     with col2:
-        st.metric("⏱️", f"{search_time:.2f}s")
+        st.markdown(f'<div class="timing-text">⏱️ {search_time:.2f}s</div>', unsafe_allow_html=True)
     
     # Results
     if not results:
