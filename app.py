@@ -249,10 +249,14 @@ class EmbeddingModelClient:
             api_key = get_env('VOYAGE_API_KEY') or get_env('VOYAGEAI_API_KEY')
             if api_key:
                 self.client = voyageai.Client(api_key=api_key)
+            else:
+                st.error("❌ `VOYAGE_API_KEY` not found in secrets!")
         elif self.model_name.startswith('openai'):
             api_key = get_env('OPENAI_API_KEY')
             if api_key:
                 self.client = OpenAI(api_key=api_key)
+            else:
+                st.error("❌ `OPENAI_API_KEY` not found in secrets!")
     
     def embed_query(self, text: str) -> List[float]:
         """Generate embedding for query text with retry logic"""
