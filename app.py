@@ -38,8 +38,12 @@ def get_env(key: str, default: str = None) -> str:
     Priority: Streamlit secrets > .env file > default value
     """
     # Try Streamlit secrets first (cloud deployment)
-    if hasattr(st, 'secrets') and key in st.secrets:
-        return st.secrets[key]
+    try:
+        if hasattr(st, 'secrets') and key in st.secrets:
+            return st.secrets[key]
+    except Exception:
+        # Secrets file doesn't exist or error accessing it - fall back to env vars
+        pass
     # Fall back to environment variables (.env file for local)
     return os.getenv(key, default)
 

@@ -2,6 +2,10 @@
 .env
 *.env
 
+# Streamlit secrets (NEVER commit!)
+streamlit_secrets.toml
+**/streamlit_secrets.toml
+
 # Python cache
 __pycache__/
 *.py[cod]
