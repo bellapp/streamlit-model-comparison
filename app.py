@@ -711,15 +711,22 @@ def main():
         
         # Check which models have namespaces configured
         models_config = []
-        if vertex_namespace.strip():
+        
+        # Debug: Show what we're checking
+        st.info(f"Debug - Vertex: '{vertex_namespace}' (len: {len(vertex_namespace) if vertex_namespace else 0})")
+        st.info(f"Debug - Voyage: '{voyage_namespace}' (len: {len(voyage_namespace) if voyage_namespace else 0})")
+        st.info(f"Debug - OpenAI: '{openai_namespace}' (len: {len(openai_namespace) if openai_namespace else 0})")
+        
+        if vertex_namespace and vertex_namespace.strip():
             models_config.append(('vertex', vertex_namespace.strip()))
-        if voyage_namespace.strip():
+        if voyage_namespace and voyage_namespace.strip():
             models_config.append(('voyage', voyage_namespace.strip()))
-        if openai_namespace.strip():
+        if openai_namespace and openai_namespace.strip():
             models_config.append(('openai-small', openai_namespace.strip()))
         
         if not models_config:
             st.warning("⚠️ Please configure at least one model namespace")
+            st.error(f"Debug: All namespaces are empty!")
             return
         
         st.info(f"🔍 Searching for {search_type}: **{query_text}**")
