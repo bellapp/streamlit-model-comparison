@@ -578,6 +578,51 @@ def main():
                 help=f"Type your search and press Enter ⏎ or click the button below"
             )
             
+            # Move Search Parameters here (under text search input)
+            st.markdown("---")
+            st.subheader("⚙️ Search Parameters")
+            
+            # Initialize session state for top_k if not exists
+            if 'top_k_value' not in st.session_state:
+                st.session_state.top_k_value = 10
+            
+            # Create two columns for slider and number input
+            col_slider, col_number = st.columns([2, 1])
+            
+            with col_slider:
+                top_k_slider = st.slider(
+                    "Number of results per model",
+                    min_value=1,
+                    max_value=1000,
+                    value=st.session_state.top_k_value,
+                    help="Drag slider or type exact number → (max: 1000)",
+                    key="top_k_slider"
+                )
+            
+            with col_number:
+                st.markdown("<br>", unsafe_allow_html=True)  # Align with slider label
+                top_k_number = st.number_input(
+                    "Or type number",
+                    min_value=1,
+                    max_value=1000,
+                    value=st.session_state.top_k_value,
+                    step=1,
+                    help="Type exact number of results",
+                    key="top_k_number",
+                    label_visibility="visible"
+                )
+            
+            # Update session state based on which control changed
+            if top_k_slider != st.session_state.top_k_value:
+                st.session_state.top_k_value = top_k_slider
+                top_k = top_k_slider
+            elif top_k_number != st.session_state.top_k_value:
+                st.session_state.top_k_value = top_k_number
+                top_k = top_k_number
+            else:
+                top_k = st.session_state.top_k_value
+            
+            st.markdown("---")
             st.caption("💡 Tip: Press **Enter** or click the button to start searching")
             
             # Submit button (Enter key will trigger this)
@@ -648,49 +693,6 @@ def main():
         )
         
         st.divider()
-        
-        # Search Parameters
-        st.subheader("⚙️ Search Parameters")
-        
-        # Initialize session state for top_k if not exists
-        if 'top_k_value' not in st.session_state:
-            st.session_state.top_k_value = 10
-        
-        # Create two columns for slider and number input
-        col_slider, col_number = st.columns([2, 1])
-        
-        with col_slider:
-            top_k_slider = st.slider(
-                "Number of results per model",
-                min_value=1,
-                max_value=1000,
-                value=st.session_state.top_k_value,
-                help="Drag slider or type exact number → (max: 1000)",
-                key="top_k_slider"
-            )
-        
-        with col_number:
-            st.markdown("<br>", unsafe_allow_html=True)  # Align with slider label
-            top_k_number = st.number_input(
-                "Or type number",
-                min_value=1,
-                max_value=1000,
-                value=st.session_state.top_k_value,
-                step=1,
-                help="Type exact number of results",
-                key="top_k_number",
-                label_visibility="visible"
-            )
-        
-        # Update session state based on which control changed
-        if top_k_slider != st.session_state.top_k_value:
-            st.session_state.top_k_value = top_k_slider
-            top_k = top_k_slider
-        elif top_k_number != st.session_state.top_k_value:
-            st.session_state.top_k_value = top_k_number
-            top_k = top_k_number
-        else:
-            top_k = st.session_state.top_k_value
         
         regions = ["aws-eu-central-1", "aws-us-east-1", "gcp-us-central1"]
         default_index = regions.index(default_region) if default_region in regions else 1
@@ -785,84 +787,9 @@ def main():
         status_text.empty()
         progress_bar.empty()
         
-        # Display Summary Metrics - HIDDEN
-        # st.markdown("---")
-        # st.markdown("## 📊 Comparison Summary")
-        
-        comparison_df = compare_model_performance(all_results)
-        
-        # # Find best model (LOWEST average distance = best)
-        # best_idx = comparison_df['Avg Distance'].idxmin()
-        # best_model_name = comparison_df.loc[best_idx, 'Model']
-        # best_distance = comparison_df.loc[best_idx, 'Avg Distance']
-        
-        # # Display quick winner if there are results (distance < 999 means valid results)
-        # if best_distance < 999:
-        #     col1, col2, col3 = st.columns([1, 2, 1])
-        #     with col2:
-        #         st.success(f"🏆 **Best Performer**: {best_model_name.upper()} with avg distance {best_distance:.4f} (lower is better)")
-        
-        # st.markdown("### Model Performance")
-        
-        # # Display metrics in columns with icons
-        # cols = st.columns(len(models_config))
-        # model_icons = {'vertex': '🔵', 'voyage': '🟠', 'openai-small': '🟢'}
-        
-        # for idx, (model_name, _) in enumerate(models_config):
-        #     with cols[idx]:
-        #         model_data = comparison_df[comparison_df['Model'] == model_name].iloc[0]
-        #         icon = model_icons.get(model_name, '🤖')
-                
-        #         # Determine if this is the best model (lowest distance = best)
-        #         is_best = model_name == best_model_name and best_distance < 999
-        #         border_color = "#FFD700" if is_best else "#e7f3ff"
-                
-        #         st.markdown(f'''
-        #         <div style="background: linear-gradient(135deg, {border_color}20 0%, #ffffff 100%); 
-        #                     padding: 1.2rem; border-radius: 12px; text-align: center; 
-        #                     border: {"3px solid #FFD700" if is_best else "2px solid #e0e0e0"};
-        #                     box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-        #             <div style="font-size: 2rem; margin-bottom: 0.5rem;">{icon}</div>
-        #             <div style="font-size: 1.1rem; font-weight: 600; color: #333; margin-bottom: 0.5rem;">
-        #                 {model_name.upper()}
-        #             </div>
-        #             <div style="font-size: 2rem; font-weight: 700; color: #1f77b4; margin-bottom: 0.3rem;">
-        #                 {model_data['Avg Distance']:.4f}
-        #             </div>
-        #             <div style="font-size: 0.9rem; color: #666;">
-        #                 {model_data['Results']} results • {all_times.get(model_name, 0):.2f}s
-        #             </div>
-        #             <div style="font-size: 0.75rem; color: #999; margin-top: 0.3rem;">
-        #                 lower distance = better match
-        #             </div>
-        #             {'<div style="margin-top: 0.5rem; color: #FFD700; font-weight: 600;">👑 Winner</div>' if is_best else ''}
-        #         </div>
-        #         ''', unsafe_allow_html=True)
-        
-        # # Display detailed comparison table
-        # with st.expander("📈 Detailed Metrics", expanded=True):
-        #     st.caption("💡 Remember: Lower distance = better match (cosine_distance ranges from 0-2)")
-        #     # Style the dataframe with gradient if matplotlib is available
-        #     try:
-        #         styled_df = comparison_df.style.format({
-        #             'Avg Distance': '{:.4f}',
-        #             'Best Distance': '{:.4f}',
-        #             'Worst Distance': '{:.4f}'
-        #         }).background_gradient(subset=['Avg Distance'], cmap='RdYlGn_r')  # Reversed colormap
-        #         st.dataframe(styled_df, width='stretch')
-        #     except ImportError:
-        #         # Fallback if matplotlib not available
-        #         styled_df = comparison_df.style.format({
-        #             'Avg Distance': '{:.4f}',
-        #             'Best Distance': '{:.4f}',
-        #             'Worst Distance': '{:.4f}'
-        #         })
-        #         st.dataframe(styled_df, width='stretch')
-        
-        # Display results side by side
+        # Display Results
         st.markdown("---")
-        st.markdown("## 🔎 Detailed Results by Model")
-        st.caption("Scroll through each model's top matches with similarity scores")
+        st.markdown(f"### 🔍 Results for: `{query_text}`")
         
         cols = st.columns(len(models_config))
         for idx, (model_name, _) in enumerate(models_config):
@@ -878,29 +805,6 @@ def main():
                     all_times.get(model_name, 0),
                     color_classes.get(model_name, '')
                 )
-        
-        # Additional Analysis
-        st.markdown("---")
-        st.markdown("## 📈 Performance Analysis")
-        
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            st.markdown("### 🎯 Accuracy")
-            best_model = comparison_df.loc[comparison_df['Avg Distance'].idxmin(), 'Model']
-            best_distance = comparison_df['Avg Distance'].min()
-            st.metric("Best Model", best_model.upper(), f"{best_distance:.4f} (lower=better)")
-            
-        with col2:
-            st.markdown("### ⚡ Speed")
-            if all_times:
-                fastest = min(all_times.items(), key=lambda x: x[1] if x[1] > 0 else float('inf'))
-                st.metric("Fastest", fastest[0].upper(), f"{fastest[1]:.2f}s")
-            
-        with col3:
-            st.markdown("### 📊 Coverage")
-            total_results = sum(len(r) for r in all_results.values() if r)
-            st.metric("Total Results", total_results, f"across {len(models_config)} models")
         
         # Export results
         st.markdown("---")
