@@ -49,7 +49,7 @@ def get_env(key: str, default: str = None) -> str:
 
 # Page configuration
 st.set_page_config(
-    page_title="Model Comparison Tool",
+    page_title="Embeedidng Model Comparison ",
     page_icon="⚖️",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -528,7 +528,7 @@ def compare_model_performance(results_dict: Dict[str, List[Dict]]) -> pd.DataFra
 
 def main():
     # Header
-    st.markdown('<h1 class="main-header">🐟 ⚖️ Model Comparison Tool</h1>', unsafe_allow_html=True)
+    st.markdown('<h1 class="main-header"> ⚖️ Embedding Model Comparison </h1>', unsafe_allow_html=True)
     st.markdown("""
     <p style="text-align: center; color: #666; font-size: 1.1rem;">
     Compare search results from Vertex AI, Voyage, and OpenAI embedding models side-by-side
@@ -736,8 +736,8 @@ def main():
             st.warning("⚠️ Please configure at least one model namespace")
             return
         
-        st.info(f"🔍 Searching for {search_type}: **{query_text}**")
-        st.info(f"📊 Comparing **{len(models_config)}** models across {search_type.lower()} namespaces")
+        # st.info(f"🔍 Searching for {search_type}: **{query_text}**")
+        # st.info(f"📊 Comparing **{len(models_config)}** models across {search_type.lower()} namespaces")
         
         # Initialize searcher
         searcher = TurbopufferSearcher(turbopuffer_key, region)
