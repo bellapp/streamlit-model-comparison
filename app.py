@@ -374,10 +374,10 @@ class TurbopufferSearcher:
                 # print(f"\n=== Metadata Debug for {namespace} in {region} ===")
                 # print(f"Type: {type(meta)}")
                 # print(f"Dir: {[attr for attr in dir(meta) if not attr.startswith('_')]}")
-                if hasattr(meta, 'schema'):
-                    print(f"Schema: {meta.schema}")
-                if hasattr(meta, '__dict__'):
-                    print(f"Dict: {meta.__dict__}")
+                # if hasattr(meta, 'schema'):
+                #     print(f"Schema: {meta.schema}")
+                # if hasattr(meta, '__dict__'):
+                #     print(f"Dict: {meta.__dict__}")
                 
                 # Handle NamespaceMetadata object (latest SDK as seen in terminal)
                 if hasattr(meta, 'approx_row_count'):
@@ -739,7 +739,7 @@ def main():
             vertex_namespace = st.text_input(
                 f"Namespace",
                 value=default_vertex,
-                key="vertex_ns_input",
+                key=f"vertex_ns_input_{search_type.lower()}",
                 label_visibility="collapsed"
             )
         with col_reg_v:
@@ -747,7 +747,7 @@ def main():
                 "Reg V",
                 options=regions,
                 index=regions.index("aws-eu-central-1") if "aws-eu-central-1" in regions else 0,
-                key="vertex_reg_input",
+                key=f"vertex_reg_input_{search_type.lower()}",
                 label_visibility="collapsed"
             )
             
@@ -758,7 +758,7 @@ def main():
             voyage_namespace = st.text_input(
                 f"Voyage NS",
                 value=default_voyage,
-                key="voyage_ns_input",
+                key=f"voyage_ns_input_{search_type.lower()}",
                 label_visibility="collapsed"
             )
         with col_reg_voy:
@@ -766,7 +766,7 @@ def main():
                 "Reg Voy",
                 options=regions,
                 index=regions.index("aws-us-east-1") if "aws-us-east-1" in regions else 0,
-                key="voyage_reg_input",
+                key=f"voyage_reg_input_{search_type.lower()}",
                 label_visibility="collapsed"
             )
             
@@ -777,7 +777,7 @@ def main():
             openai_namespace = st.text_input(
                 f"OpenAI NS",
                 value=default_openai,
-                key="openai_ns_input",
+                key=f"openai_ns_input_{search_type.lower()}",
                 label_visibility="collapsed"
             )
         with col_reg_o:
@@ -785,7 +785,7 @@ def main():
                 "Reg O",
                 options=regions,
                 index=regions.index("gcp-us-central1") if "gcp-us-central1" in regions else 0,
-                key="openai_reg_input",
+                key=f"openai_reg_input_{search_type.lower()}",
                 label_visibility="collapsed"
             )
     
