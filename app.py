@@ -58,6 +58,47 @@ st.set_page_config(
 # Custom CSS for better styling
 st.markdown("""
 <style>
+    /* Compact sidebar */
+    [data-testid="stSidebar"] {
+        padding-top: 1  rem;
+    }
+    [data-testid="stSidebar"] .block-container {
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+    }
+    [data-testid="stSidebar"] h2 {
+        margin-top: 0.5rem;
+        margin-bottom: 0.5rem;
+        font-size: 1.1rem;
+    }
+    [data-testid="stSidebar"] h3 {
+        margin-top: 0.3rem;
+        margin-bottom: 0.3rem;
+        font-size: 1rem;
+    }
+    [data-testid="stSidebar"] .stRadio {
+        margin-top: 0.3rem;
+        margin-bottom: 0.3rem;
+    }
+    [data-testid="stSidebar"] .stTextInput {
+        margin-top: 0.3rem;
+        margin-bottom: 0.3rem;
+    }
+    [data-testid="stSidebar"] .stNumberInput {
+        margin-top: 0.3rem;
+        margin-bottom: 0.3rem;
+    }
+    [data-testid="stSidebar"] .stSelectbox {
+        margin-top: 0.3rem;
+        margin-bottom: 0.3rem;
+    }
+    [data-testid="stSidebar"] hr {
+        margin: 0.5rem 0;
+    }
+    [data-testid="stSidebar"] .element-container {
+        margin-bottom: 0.3rem;
+    }
+    
     .main-header {
         font-size: 2.5rem;
         color: #1f77b4;
@@ -69,42 +110,32 @@ st.markdown("""
         font-weight: 700;
     }
     .model-card {
-        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-        padding: 1.5rem;
-        border-radius: 12px;
-        border-left: 5px solid;
-        margin-bottom: 1rem;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        transition: transform 0.2s;
-    }
-    .model-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        background: transparent;
+        padding: 0;
+        border: none;
+        margin-bottom: 2rem;
     }
     .model-vertex {
-        border-left-color: #4285f4;
-        background: linear-gradient(135deg, #e3f2fd 0%, #ffffff 100%);
+        /* No special styling */
     }
     .model-voyage {
-        border-left-color: #ff7f0e;
-        background: linear-gradient(135deg, #fff3e0 0%, #ffffff 100%);
+        /* No special styling */
     }
     .model-openai {
-        border-left-color: #10a37f;
-        background: linear-gradient(135deg, #e0f2f1 0%, #ffffff 100%);
+        /* No special styling */
     }
     .result-item {
-        background-color: white;
-        padding: 0.75rem;
-        margin: 0.5rem 0;
-        border-radius: 8px;
-        border-left: 3px solid #ddd;
+        background-color: transparent;
+        padding: 0.4rem 0.5rem;
+        margin: 0.2rem 0;
+        border-radius: 6px;
+        border-left: 2px solid rgba(255,255,255,0.2);
         transition: all 0.2s;
     }
     .result-item:hover {
-        background-color: #f0f2f6;
-        border-left-color: #666;
-        transform: translateX(3px);
+        background-color: rgba(255,255,255,0.05);
+        border-left-color: rgba(255,255,255,0.4);
+        transform: translateX(2px);
     }
     .score-badge {
         display: inline-block;
@@ -320,49 +351,87 @@ class EmbeddingModelClient:
 class TurbopufferSearcher:
     """Search TurboPuffer namespaces"""
     
-    def __init__(self, api_key: str, region: str = "aws-eu-central-1"):
-        self.tpuf = tpuf.Turbopuffer(api_key=api_key, region=region)
+    def __init__(self, api_key: str):
+        self.api_key = api_key
     
-    def get_namespace_stats(self, namespace: str) -> Dict:
-        """Get statistics for a namespace"""
+    def get_namespace_stats(self, namespace: str, region: str) -> Dict:
+        """Get statistics for a namespace in a specific region"""
         try:
-            ns = self.tpuf.namespace(namespace)
-            # In latest turbopuffer-python, we can get stats from the namespace object
-            # If not directly available, we might need to list namespaces or check attributes
+            # Create a new client instance for this specific region
+            tpuf_client = tpuf.Turbopuffer(api_key=self.api_key, region=region)
+            ns = tpuf_client.namespace(namespace)
             stats = {
                 'approx_count': 0,
                 'dimensions': 0,
-                'storage_size': 'N/A'
+                'storage_size': 'N/A',
+                'region': region
             }
             
-            # Try to get metadata
             try:
-                # Some versions use metadata() or stats()
                 meta = ns.metadata()
-                stats['approx_count'] = meta.get('approx_count', 0)
-                stats['dimensions'] = meta.get('dimensions', 0)
-            except:
-                pass
                 
+                # Debug: print metadata structure
+                # print(f"\n=== Metadata Debug for {namespace} in {region} ===")
+                # print(f"Type: {type(meta)}")
+                # print(f"Dir: {[attr for attr in dir(meta) if not attr.startswith('_')]}")
+                if hasattr(meta, 'schema'):
+                    print(f"Schema: {meta.schema}")
+                if hasattr(meta, '__dict__'):
+                    print(f"Dict: {meta.__dict__}")
+                
+                # Handle NamespaceMetadata object (latest SDK as seen in terminal)
+                if hasattr(meta, 'approx_row_count'):
+                    stats['approx_count'] = meta.approx_row_count
+                elif hasattr(meta, 'approx_count'):
+                    stats['approx_count'] = meta.approx_count
+                # Handle dictionary (older SDK or fallback)
+                elif isinstance(meta, dict):
+                    stats['approx_count'] = meta.get('approx_row_count', meta.get('approx_count', 0))
+                
+                # Extract dimensions from schema if not direct attribute
+                import re
+                if hasattr(meta, 'dimensions'):
+                    stats['dimensions'] = meta.dimensions
+                    print(f"Found dimensions attribute: {meta.dimensions}")
+                elif hasattr(meta, 'schema') and isinstance(meta.schema, dict) and 'vector' in meta.schema:
+                    # Extract from schema dict e.g. {'type': '[768]f32', ...}
+                    vector_schema = meta.schema['vector']
+                    v_type = vector_schema.get('type', '') if isinstance(vector_schema, dict) else ''
+                    print(f"Vector type from schema: {v_type}")
+                    match = re.search(r'\[(\d+)\]', v_type)
+                    if match:
+                        stats['dimensions'] = int(match.group(1))
+                        print(f"Extracted dimensions: {stats['dimensions']}")
+                elif hasattr(meta, 'schema_') and hasattr(meta.schema_.get('vector'), 'type'):
+                    # Try schema_ with AttributeSchemaConfig
+                    v_type = meta.schema_['vector'].type
+                    print(f"Vector type from schema_: {v_type}")
+                    match = re.search(r'\[(\d+)\]', v_type)
+                    if match:
+                        stats['dimensions'] = int(match.group(1))
+                        print(f"Extracted dimensions from schema_: {stats['dimensions']}")
+                elif isinstance(meta, dict) and 'dimensions' in meta:
+                    stats['dimensions'] = meta.get('dimensions', 0)
+                
+                print(f"Final stats: {stats}")
+                stats['region'] = region
+            except Exception as e:
+                print(f"Error getting metadata: {e}")
+                stats['region'] = region
+                pass
+            
             return stats
         except Exception:
-            return {'approx_count': 0, 'dimensions': 0, 'storage_size': 'N/A'}
+            return {'approx_count': 0, 'dimensions': 0, 'storage_size': 'N/A', 'region': region}
 
-    def search(self, namespace: str, query_vector: List[float], top_k: int = 10, model_name: str = "") -> List[Dict]:
+    def search(self, namespace: str, region: str, query_vector: List[float], top_k: int = 10, model_name: str = "") -> List[Dict]:
         """
-        Search for similar items in namespace.
-        
-        Args:
-            namespace: TurboPuffer namespace to search
-            query_vector: Query embedding vector
-            top_k: Number of results to return
-            model_name: Name of the model (for better error messages)
-        
-        Returns:
-            List of {id, text, score} dicts
+        Search for similar items in namespace in a specific region.
         """
         try:
-            ns = self.tpuf.namespace(namespace)
+            # Create a new client instance for this specific region
+            tpuf_client = tpuf.Turbopuffer(api_key=self.api_key, region=region)
+            ns = tpuf_client.namespace(namespace)
             
             result = ns.query(
                 rank_by=("vector", "ANN", query_vector),
@@ -464,7 +533,6 @@ def get_score_class(score: float) -> str:
 
 def display_model_results(model_name: str, results: List[Dict], search_time: float, color_class: str, stats: Dict = None):
     """Display results for a single model"""
-    st.markdown(f'<div class="model-card {color_class}">', unsafe_allow_html=True)
     
     # Header with icon based on model
     model_icons = {
@@ -474,21 +542,20 @@ def display_model_results(model_name: str, results: List[Dict], search_time: flo
     }
     icon = model_icons.get(model_name, '🤖')
     
-    col1, col2 = st.columns([3, 1])
-    with col1:
-        st.markdown(f"### {icon} {model_name.upper()}")
-    with col2:
-        st.markdown(f'<div class="timing-text">⏱️ {search_time:.2f}s</div>', unsafe_allow_html=True)
+    # Model name header with inline metadata
+    st.markdown(f"### {icon} {model_name.upper()}")
     
-    # Namespace Stats
     if stats:
         st.markdown(f"""
-        <div style="font-size: 0.85rem; color: #666; margin-bottom: 1rem; border-top: 1px solid #eee; padding-top: 0.5rem;">
-            📊 <b>Namespace Info:</b><br>
-            • Total Docs: {stats.get('approx_count', 0):,}<br>
-            • Dimensions: {stats.get('dimensions', 0)}d
+        <div style="font-size: 0.9rem; color: #bbb; margin-bottom: 0.5rem; margin-top: -0.5rem;">
+            ⏱️ <b>{search_time:.2f}s</b> &nbsp;|&nbsp; 
+            📊 <b style="color: #4CAF50;">{stats.get('approx_count', 0):,}</b> docs &nbsp;|&nbsp; 
+            📏 <b style="color: #2196F3;">{stats.get('dimensions', 0)}</b>d &nbsp;|&nbsp; 
+            🌍 <b style="color: #FFB74D;">{stats.get('region', 'N/A')}</b>
         </div>
         """, unsafe_allow_html=True)
+    else:
+        st.markdown(f'<div style="font-size: 0.9rem; color: #bbb; margin-bottom: 0.5rem; margin-top: -0.5rem;">⏱️ <b>{search_time:.2f}s</b></div>', unsafe_allow_html=True)
     
     # Results
     if not results:
@@ -527,9 +594,8 @@ def display_model_results(model_name: str, results: List[Dict], search_time: flo
                     with st.expander("📄 View full text"):
                         st.text(text)
                 
-                st.markdown("---")
-    
-    st.markdown('</div>', unsafe_allow_html=True)
+                if i < len(results):  # Only add divider if not last result
+                    st.markdown("<div style='margin: 0.3rem 0; border-bottom: 1px solid rgba(255,255,255,0.1);'></div>", unsafe_allow_html=True)
 
 
 def compare_model_performance(results_dict: Dict[str, List[Dict]]) -> pd.DataFrame:
@@ -590,22 +656,21 @@ def main():
     
     # Sidebar Configuration
     with st.sidebar:
-        st.header("⚙️ Configuration")
+        st.markdown("### ⚙️ Configuration")
         
         # Search Type Selection
-        st.subheader("🎯 Search Type")
+        st.markdown("**🎯 Search Type**")
         search_type = st.radio(
             "What do you want to search for?",
             options=["Titles", "Skills"],
             index=0,
-            help="Choose whether to search job titles or skills"
+            help="Choose whether to search job titles or skills",
+            label_visibility="collapsed"
         )
-        
-        st.divider()
         
         # Search Form (with Enter key support)
         with st.form(key='search_form', clear_on_submit=False):
-            st.subheader("🔍 Search Query")
+            st.markdown("**🔍 Search Query**")
             placeholder = "e.g., Senior Python Developer" if search_type == "Titles" else "e.g., Python, React, Machine Learning"
             query_text = st.text_input(
                 f"Enter a {search_type.lower()[:-1]} to search",
@@ -614,78 +679,37 @@ def main():
             )
             
             # Move Search Parameters here (under text search input)
-            st.markdown("---")
-            st.subheader("⚙️ Search Parameters")
+            st.markdown("**⚙️ Search Parameters**")
             
-            # Initialize session state for top_k if not exists
-            if 'top_k_value' not in st.session_state:
-                st.session_state.top_k_value = 10
+            # Simple number input only
+            top_k = st.number_input(
+                "Number of results per model",
+                min_value=1,
+                max_value=1000,
+                value=10,
+                step=1,
+                help="Enter the number of results to return (max: 1000)"
+            )
             
-            # Create two columns for slider and number input
-            col_slider, col_number = st.columns([2, 1])
-            
-            with col_slider:
-                top_k_slider = st.slider(
-                    "Number of results per model",
-                    min_value=1,
-                    max_value=1000,
-                    value=st.session_state.top_k_value,
-                    help="Drag slider or type exact number → (max: 1000)",
-                    key="top_k_slider"
-                )
-            
-            with col_number:
-                st.markdown("<br>", unsafe_allow_html=True)  # Align with slider label
-                top_k_number = st.number_input(
-                    "Or type number",
-                    min_value=1,
-                    max_value=1000,
-                    value=st.session_state.top_k_value,
-                    step=1,
-                    help="Type exact number of results",
-                    key="top_k_number",
-                    label_visibility="visible"
-                )
-            
-            # Update session state based on which control changed
-            if top_k_slider != st.session_state.top_k_value:
-                st.session_state.top_k_value = top_k_slider
-                top_k = top_k_slider
-            elif top_k_number != st.session_state.top_k_value:
-                st.session_state.top_k_value = top_k_number
-                top_k = top_k_number
-            else:
-                top_k = st.session_state.top_k_value
-            
-            st.markdown("---")
-            st.caption("💡 Tip: Press **Enter** or click the button to start searching")
+            st.caption("💡 Tip: Press **Enter** or click the button")
             
             # Submit button (Enter key will trigger this)
             search_button_form = st.form_submit_button("🚀 Compare Models", use_container_width=True, type="primary")
         
-        st.divider()
-        
         # Namespace Configuration
-        st.subheader(f"📦 Model Namespaces ({search_type})")
+        st.markdown(f"**📦 Model Namespaces ({search_type})**")
         
         # Select appropriate defaults based on search type
         if search_type == "Titles":
             default_vertex = default_vertex_titles_ns
             default_voyage = default_voyage_titles_ns
             default_openai = default_openai_titles_ns
-            env_vars = "GEMINI_TITLES_NAMESPACE (or VERTEX_TITLES_NAMESPACE), VOYAGE_TITLES_NAMESPACE, OPENAI_TITLES_NAMESPACE"
         else:  # Skills
             default_vertex = default_vertex_skills_ns
             default_voyage = default_voyage_skills_ns
             default_openai = default_openai_skills_ns
-            env_vars = "GEMINI_SKILLS_NAMESPACE (or VERTEX_SKILLS_NAMESPACE), VOYAGE_SKILLS_NAMESPACE, OPENAI_SKILLS_NAMESPACE"
         
-        if default_vertex or default_voyage or default_openai:
-            st.success(f"✓ Default {search_type.lower()} namespaces loaded from .env")
-        else:
-            st.info(f"💡 Tip: Set {env_vars} in .env")
-        
-        with st.expander("ℹ️ Model Info & Tips"):
+        with st.expander("ℹ️ Info", expanded=False):
             st.markdown("""
             **Model Dimensions:**
             - **Vertex AI**: 768d (text-multilingual-embedding-002) - fixed
@@ -706,50 +730,64 @@ def main():
             **Tip**: If you hit a rate limit, clear that model's namespace field to test the others!
             """)
         
-        vertex_namespace = st.text_input(
-            f"Vertex AI {search_type} Namespace",
-            value=default_vertex,
-            placeholder=f"compare-{search_type.lower()}-vertex-multilingual-v4-20260125",
-            help=f"Namespace containing Vertex AI (text-multilingual-embedding-002) {search_type.lower()} embeddings"
-        )
-        
-        voyage_namespace = st.text_input(
-            f"Voyage {search_type} Namespace",
-            value=default_voyage,
-            placeholder=f"compare-{search_type.lower()}-voyage-profile_v12-20250126",
-            help=f"Namespace containing Voyage {search_type.lower()} embeddings"
-        )
-        
-        openai_namespace = st.text_input(
-            f"OpenAI {search_type} Namespace",
-            value=default_openai,
-            placeholder=f"compare-{search_type.lower()}-openai-small-profile_v12-20250126",
-            help=f"Namespace containing OpenAI {search_type.lower()} embeddings"
-        )
-        
-        st.divider()
-        
         regions = ["aws-eu-central-1", "aws-us-east-1", "gcp-us-central1"]
-        default_index = regions.index(default_region) if default_region in regions else 1
-        region = st.selectbox(
-            "TurboPuffer Region",
-            options=regions,
-            index=default_index,
-            help="TurboPuffer region where namespaces are stored (from .env: TURBOPUFFER_REGION)"
-        )
         
-        # Info about Vertex AI
-        with st.expander("ℹ️ Vertex AI Configuration"):
-            st.info("""
-            **Vertex AI Model**: `text-multilingual-embedding-002`
-            - **Dimensions**: 768 (fixed)
-            - **Languages**: Multilingual support (100+ languages)
-            - **GCP Project**: Set via `VERTEX_PROJECT_ID` (default: gen-lang-client-0683226472)
-            - **Region**: Set via `VERTEX_REGION` (default: us-central1)
-            - **Auth**: Service account via `VERTEX_SERVICE_ACCOUNT_FILE` or default credentials
-            """)
-        
-        st.divider()
+        # --- Vertex AI Namespace & Region ---
+        st.markdown("**Vertex AI (Gemini)**")
+        col_ns_v, col_reg_v = st.columns([2, 1])
+        with col_ns_v:
+            vertex_namespace = st.text_input(
+                f"Namespace",
+                value=default_vertex,
+                key="vertex_ns_input",
+                label_visibility="collapsed"
+            )
+        with col_reg_v:
+            vertex_region = st.selectbox(
+                "Reg V",
+                options=regions,
+                index=regions.index("aws-eu-central-1") if "aws-eu-central-1" in regions else 0,
+                key="vertex_reg_input",
+                label_visibility="collapsed"
+            )
+            
+        # --- Voyage Namespace & Region ---
+        st.markdown("**Voyage AI**")
+        col_ns_voy, col_reg_voy = st.columns([2, 1])
+        with col_ns_voy:
+            voyage_namespace = st.text_input(
+                f"Voyage NS",
+                value=default_voyage,
+                key="voyage_ns_input",
+                label_visibility="collapsed"
+            )
+        with col_reg_voy:
+            voyage_region = st.selectbox(
+                "Reg Voy",
+                options=regions,
+                index=regions.index("aws-us-east-1") if "aws-us-east-1" in regions else 0,
+                key="voyage_reg_input",
+                label_visibility="collapsed"
+            )
+            
+        # --- OpenAI Namespace & Region ---
+        st.markdown("**OpenAI**")
+        col_ns_o, col_reg_o = st.columns([2, 1])
+        with col_ns_o:
+            openai_namespace = st.text_input(
+                f"OpenAI NS",
+                value=default_openai,
+                key="openai_ns_input",
+                label_visibility="collapsed"
+            )
+        with col_reg_o:
+            openai_region = st.selectbox(
+                "Reg O",
+                options=regions,
+                index=regions.index("gcp-us-central1") if "gcp-us-central1" in regions else 0,
+                key="openai_reg_input",
+                label_visibility="collapsed"
+            )
     
     # Main content (triggered by form submission or button click)
     if search_button_form:
@@ -761,21 +799,18 @@ def main():
         models_config = []
         
         if vertex_namespace and vertex_namespace.strip():
-            models_config.append(('vertex', vertex_namespace.strip()))
+            models_config.append(('vertex', vertex_namespace.strip(), vertex_region))
         if voyage_namespace and voyage_namespace.strip():
-            models_config.append(('voyage', voyage_namespace.strip()))
+            models_config.append(('voyage', voyage_namespace.strip(), voyage_region))
         if openai_namespace and openai_namespace.strip():
-            models_config.append(('openai-small', openai_namespace.strip()))
+            models_config.append(('openai-small', openai_namespace.strip(), openai_region))
         
         if not models_config:
             st.warning("⚠️ Please configure at least one model namespace")
             return
         
-        # st.info(f"🔍 Searching for {search_type}: **{query_text}**")
-        # st.info(f"📊 Comparing **{len(models_config)}** models across {search_type.lower()} namespaces")
-        
         # Initialize searcher
-        searcher = TurbopufferSearcher(turbopuffer_key, region)
+        searcher = TurbopufferSearcher(turbopuffer_key)
         
         # Store results
         all_results = {}
@@ -786,7 +821,7 @@ def main():
         progress_bar = st.progress(0)
         status_text = st.empty()
         
-        for idx, (model_name, namespace) in enumerate(models_config):
+        for idx, (model_name, namespace, region) in enumerate(models_config):
             status_text.text(f"Searching {model_name.upper()}...")
             
             try:
@@ -799,14 +834,14 @@ def main():
                 query_vector = client.embed_query(query_text)
                 
                 # Search namespace (pass model_name for better error messages)
-                results = searcher.search(namespace, query_vector, top_k=top_k, model_name=model_name)
+                results = searcher.search(namespace, region, query_vector, top_k=top_k, model_name=model_name)
                 search_time = time.time() - start_time
                 
                 all_results[model_name] = results
                 all_times[model_name] = search_time
                 
                 # Fetch namespace stats
-                all_stats[model_name] = searcher.get_namespace_stats(namespace)
+                all_stats[model_name] = searcher.get_namespace_stats(namespace, region)
                 
             except Exception as e:
                 error_msg = str(e)
@@ -820,7 +855,7 @@ def main():
                 
                 all_results[model_name] = []
                 all_times[model_name] = 0
-                all_stats[model_name] = {'approx_count': 0, 'dimensions': 0}
+                all_stats[model_name] = {'approx_count': 0, 'dimensions': 0, 'region': region}
             
             progress_bar.progress((idx + 1) / len(models_config))
         
@@ -832,7 +867,7 @@ def main():
         st.markdown(f"### 🔍 Results for: `{query_text}`")
         
         cols = st.columns(len(models_config))
-        for idx, (model_name, _) in enumerate(models_config):
+        for idx, (model_name, _, _) in enumerate(models_config):
             with cols[idx]:
                 color_classes = {
                     'vertex': 'model-vertex',
@@ -856,10 +891,11 @@ def main():
                 'models': {
                     model_name: {
                         'namespace': ns,
+                        'region': reg,
                         'results': all_results.get(model_name, []),
                         'search_time': all_times.get(model_name, 0)
                     }
-                    for model_name, ns in models_config
+                    for model_name, ns, reg in models_config
                 }
             }
             st.download_button(
