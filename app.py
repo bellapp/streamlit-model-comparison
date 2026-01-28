@@ -323,6 +323,31 @@ class TurbopufferSearcher:
     def __init__(self, api_key: str, region: str = "aws-eu-central-1"):
         self.tpuf = tpuf.Turbopuffer(api_key=api_key, region=region)
     
+    def get_namespace_stats(self, namespace: str) -> Dict:
+        """Get statistics for a namespace"""
+        try:
+            ns = self.tpuf.namespace(namespace)
+            # In latest turbopuffer-python, we can get stats from the namespace object
+            # If not directly available, we might need to list namespaces or check attributes
+            stats = {
+                'approx_count': 0,
+                'dimensions': 0,
+                'storage_size': 'N/A'
+            }
+            
+            # Try to get metadata
+            try:
+                # Some versions use metadata() or stats()
+                meta = ns.metadata()
+                stats['approx_count'] = meta.get('approx_count', 0)
+                stats['dimensions'] = meta.get('dimensions', 0)
+            except:
+                pass
+                
+            return stats
+        except Exception:
+            return {'approx_count': 0, 'dimensions': 0, 'storage_size': 'N/A'}
+
     def search(self, namespace: str, query_vector: List[float], top_k: int = 10, model_name: str = "") -> List[Dict]:
         """
         Search for similar items in namespace.
@@ -437,7 +462,7 @@ def get_score_class(score: float) -> str:
         return "score-fair"
 
 
-def display_model_results(model_name: str, results: List[Dict], search_time: float, color_class: str):
+def display_model_results(model_name: str, results: List[Dict], search_time: float, color_class: str, stats: Dict = None):
     """Display results for a single model"""
     st.markdown(f'<div class="model-card {color_class}">', unsafe_allow_html=True)
     
@@ -454,6 +479,16 @@ def display_model_results(model_name: str, results: List[Dict], search_time: flo
         st.markdown(f"### {icon} {model_name.upper()}")
     with col2:
         st.markdown(f'<div class="timing-text">⏱️ {search_time:.2f}s</div>', unsafe_allow_html=True)
+    
+    # Namespace Stats
+    if stats:
+        st.markdown(f"""
+        <div style="font-size: 0.85rem; color: #666; margin-bottom: 1rem; border-top: 1px solid #eee; padding-top: 0.5rem;">
+            📊 <b>Namespace Info:</b><br>
+            • Total Docs: {stats.get('approx_count', 0):,}<br>
+            • Dimensions: {stats.get('dimensions', 0)}d
+        </div>
+        """, unsafe_allow_html=True)
     
     # Results
     if not results:
@@ -745,6 +780,7 @@ def main():
         # Store results
         all_results = {}
         all_times = {}
+        all_stats = {}
         
         # Search each model
         progress_bar = st.progress(0)
@@ -769,6 +805,9 @@ def main():
                 all_results[model_name] = results
                 all_times[model_name] = search_time
                 
+                # Fetch namespace stats
+                all_stats[model_name] = searcher.get_namespace_stats(namespace)
+                
             except Exception as e:
                 error_msg = str(e)
                 # Special handling for rate limits
@@ -781,6 +820,7 @@ def main():
                 
                 all_results[model_name] = []
                 all_times[model_name] = 0
+                all_stats[model_name] = {'approx_count': 0, 'dimensions': 0}
             
             progress_bar.progress((idx + 1) / len(models_config))
         
@@ -803,7 +843,8 @@ def main():
                     model_name,
                     all_results.get(model_name, []),
                     all_times.get(model_name, 0),
-                    color_classes.get(model_name, '')
+                    color_classes.get(model_name, ''),
+                    stats=all_stats.get(model_name)
                 )
         
         # Export results
