@@ -652,7 +652,7 @@ def main():
     default_voyage_skills_ns = get_env('VOYAGE_SKILLS_NAMESPACE', '')
     default_openai_skills_ns = get_env('OPENAI_SKILLS_NAMESPACE', '')
     
-    default_region = get_env('TURBOPUFFER_REGION') or get_env('DEFAULT_REGION', 'aws-us-east-1')
+    default_region = get_env('TURBOPUFFER_REGION') or get_env('DEFAULT_REGION', 'aws-eu-west-1')
     
     # Sidebar Configuration
     with st.sidebar:
@@ -730,7 +730,7 @@ def main():
             **Tip**: If you hit a rate limit, clear that model's namespace field to test the others!
             """)
         
-        regions = ["aws-eu-central-1", "aws-us-east-1", "gcp-us-central1"]
+        regions = ["aws-eu-west-1", "aws-eu-central-1" ]
         
         # --- Vertex AI Namespace & Region ---
         st.markdown("**Vertex AI (Gemini)**")
