@@ -746,7 +746,7 @@ def main():
             vertex_region = st.selectbox(
                 "Reg V",
                 options=regions,
-                index=regions.index("aws-eu-central-1") if "aws-eu-central-1" in regions else 0,
+                index=regions.index("aws-eu-west-1") if "aws-eu-west-1" in regions else 0,
                 key=f"vertex_reg_input_{search_type.lower()}",
                 label_visibility="collapsed"
             )
@@ -762,10 +762,11 @@ def main():
                 label_visibility="collapsed"
             )
         with col_reg_voy:
+            voy_default_reg = "aws-eu-central-1" if search_type == "Skills" else "aws-eu-west-1"
             voyage_region = st.selectbox(
                 "Reg Voy",
                 options=regions,
-                index=regions.index("aws-us-east-1") if "aws-us-east-1" in regions else 0,
+                index=regions.index(voy_default_reg) if voy_default_reg in regions else 0,
                 key=f"voyage_reg_input_{search_type.lower()}",
                 label_visibility="collapsed"
             )
